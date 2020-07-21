@@ -1,3 +1,6 @@
+#ifndef UTILS_H
+#define UTILS_H
+
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -18,3 +21,5 @@
 #endif
 
 void create_header();
+
+#endif
