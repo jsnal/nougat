@@ -4,6 +4,7 @@
 *.out
 
 nougat
+test/
 
 # vim
 *~
