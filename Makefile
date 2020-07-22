@@ -13,6 +13,7 @@ all: $(NAME)
 HEADERS = \
 	   src/utils.h \
 	   src/index.h \
+	   src/constants.h \
 
 SOURCES = \
 	   src/main.c \

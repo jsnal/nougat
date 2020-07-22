@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 #include <git2.h>
 
 
@@ -21,17 +22,12 @@
 #define D if (false)
 #endif
 
-void create_header();
+void write_header(FILE *fp, const char *title);
+void xml_encode(FILE *fp, const char *s, size_t len);
+void joinpath(char *buf, size_t bufsiz, const char *path, const char *path2);
+
 void writeheader(FILE *fp);
 void writefooter(FILE *fp);
-void xmlencode(FILE *fp, const char *s, size_t len);
 int writelog(FILE *fp);
-
-git_repository *repo;
-const char *relpath;
-char description[255];
-char *name;
-char owner[255];
-
 
 #endif

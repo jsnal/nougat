@@ -3,16 +3,12 @@
 
 #include <err.h>
 #include <limits.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <time.h>
 #include <unistd.h>
 
-#include <git2.h>
+#include "utils.h"
+#include "constants.h"
 
-int initialize();
-
-
+int index_repo(FILE *fp, repository *repo, int current, int total);
 
 #endif
