@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <err.h>
 #include <git2.h>
 
 
@@ -23,11 +24,9 @@
 #endif
 
 void write_header(FILE *fp, const char *title);
+void write_footer(FILE *fp);
 void xml_encode(FILE *fp, const char *s, size_t len);
-void joinpath(char *buf, size_t bufsiz, const char *path, const char *path2);
-
-void writeheader(FILE *fp);
-void writefooter(FILE *fp);
-int writelog(FILE *fp);
+void join_path(char *buf, size_t bufsiz, const char *path, const char *path2);
+void format_git_time_short(FILE *fp, const git_time *gtime);
 
 #endif

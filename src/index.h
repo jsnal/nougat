@@ -9,6 +9,6 @@
 #include "utils.h"
 #include "constants.h"
 
-int index_repo(FILE *fp, repository *repo, int current, int total);
+void index_repo(FILE *fp, repository *repo, int current, int total);
 
 #endif

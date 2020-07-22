@@ -1,6 +1,6 @@
 #include "utils.h"
 
-void joinpath(char *buf, size_t bufsiz, const char *path, const char *path2)
+void join_path(char *buf, size_t bufsiz, const char *path, const char *path2)
 {
   int r;
 
@@ -8,8 +8,21 @@ void joinpath(char *buf, size_t bufsiz, const char *path, const char *path2)
       path, path[0] && path[strlen(path) - 1] != '/' ? "/" : "", path2);
 
   if (r < 0 || (size_t)r >= bufsiz)
-    errx(1, "path truncated: '%s%s%s'",
+    err(1, "path truncated: '%s%s%s'",
         path, path[0] && path[strlen(path) - 1] != '/' ? "/" : "", path2);
+}
+
+void format_git_time_short(FILE *fp, const git_time *gtime)
+{
+  struct tm *intm;
+  time_t t;
+  char out[32];
+
+  t = (time_t) gtime->time;
+  if (!(intm = gmtime(&t))) return;
+
+  strftime(out, sizeof(out), "%Y-%m-%d %H:%M", intm);
+  fputs(out, fp);
 }
 
 void xml_encode(FILE *fp, const char *s, size_t len)
@@ -46,7 +59,7 @@ void write_header(FILE *fp, const char *title)
   fputs("</head>\n<body>\n", fp);
 }
 
-void writefooter(FILE *fp)
+void write_footer(FILE *fp)
 {
-  fputs("</tbody>\n</table>\n</div>\n</body>\n</html>\n", fp);
+  fputs("</body>\n</html>\n", fp);
 }
