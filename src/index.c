@@ -41,10 +41,12 @@ void write_table_row(FILE *fp, repository *repo)
     if (!strcmp(p, ".git"))
       *p = '\0';
 
+  repo->stripped_name = stripped_name;
+
   fputs("<tr><td><a href=\"", fp);
-  xml_encode(fp, stripped_name, strlen(stripped_name));
+  xml_encode(fp, repo->stripped_name, strlen(repo->stripped_name));
   fputs("/log.html\">", fp);
-  xml_encode(fp, stripped_name, strlen(stripped_name));
+  xml_encode(fp, repo->stripped_name, strlen(repo->stripped_name));
   fputs("</a></td><td>", fp);
   xml_encode(fp, repo->desc, strlen(repo->desc));
   fputs("</td><td>", fp);
