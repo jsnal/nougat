@@ -11,11 +11,13 @@ CFLAGS += $(LIBS)
 all: $(NAME)
 
 HEADERS = \
-	   src/utils.h
+	   src/utils.h \
+	   src/config.h
 
 SOURCES = \
 	   src/main.c \
 	   src/utils.c \
+	   src/config.c
 
 OBJECTS = ${SOURCES:.c=.o}
 

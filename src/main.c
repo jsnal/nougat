@@ -2,6 +2,23 @@
 #include "config.h"
 
 static void usage(char *binary);
+static int parse_cmdline(int argc, char *argv[]);
+
+static char *config_path;
+
+int parse_cmdline(int argc, char *argv[])
+{
+  static int c;
+
+  while ((c = getopt(argc, argv, "c:")) != -1)
+    switch (c)
+    {
+      case 'c': config_path = optarg; break;
+      default:  usage(argv[0]); return 1;
+    }
+
+  return 0;
+}
 
 void usage(char *binary)
 {
@@ -13,46 +30,18 @@ void usage(char *binary)
 int main(int argc, char *argv[])
 {
 
-  int c;
-  
-  while (1) {
-  
-    static struct option long_options[] = 
-      {
-        {"config", required_argument, 0, 'c'}
-      };
-      
-    int option_index = 0;
-    
-    c = getopt_long (argc, argv, "c:", long_options, &option_index);
-    
-    if(c == -1)
-      break;
-      
-    switch (c) {
-      case 'c':
-        //set filepath to config_path
-        
-        fp = fopen(config_path, "r");
-        
-        if(fp == NULL) {
-          perror("Couldn't open config file");
-          exit(EXIT_FAILURE);
-        }
-        
-        fgets(config_js, strlen(config_js), fp); 
-        break;
-      
-    }
-  
-	
   D fprintf(stderr, __PG_NAME__": Warning DEBUG is on\n");
 
-  if (argc <= 1) usage(argv[0]);
+  if (parse_cmdline(argc, argv) != 0) return 1;
+
+  cfg = (config*) malloc(sizeof(config));
+  if (config_path) cfg->path = config_path;
+  else cfg->path = "./config.json";
+
+  if (parse_config() != 0) return 1;
 
   create_header();
-  
-  
 
+  free(cfg);
   return 0;
 }
