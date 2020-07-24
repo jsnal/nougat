@@ -4,9 +4,9 @@ NAME = nougat
 VERSION = 0.0.1
 
 LIBS = -lgit2
-INCLUDES = -I/usr/local/include
+INCLUDES = -Ilibs
 CFLAGS = -Wall -O2 -Werror=format-security
-CFLAGS += $(LIBS)
+CFLAGS += $(LIBS) $(INCLUDES)
 
 all: $(NAME)
 

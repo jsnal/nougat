@@ -3,9 +3,12 @@
 
 #include "utils.h"
 
+#define JSMN_HEADER
+#include "jsmn.h"
+
 /* Technically this puts a hard limit on the number of categories the user can
  * create. However, it seems very unlikely that they will ever reach anywhere
- * near 128. If they do, this value can be raised easily without consequence. */
+ * near 64. If they do, this value can be raised easily without consequence. */
 #define MAX_CATEGORIES 64
 
 /* We can add more options the the repo in the future if we want. For exmaple,
