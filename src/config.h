@@ -2,9 +2,7 @@
 #define CONFIG_H
 
 #include "utils.h"
-
-#define JSMN_HEADER
-#include "jsmn.h"
+#include <libconfig.h>
 
 /* Technically this puts a hard limit on the number of categories the user can
  * create. However, it seems very unlikely that they will ever reach anywhere

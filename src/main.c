@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 
   cfg = (config*) malloc(sizeof(config));
   if (config_path) cfg->path = config_path;
-  else cfg->path = "./config.json";
+  else             cfg->path = "./nougat.cfg";
 
   if (parse_config() != 0) return 1;
 

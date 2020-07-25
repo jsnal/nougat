@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <string.h>
 
 /* The offical name of the program used in logs and other output */
 #define __PG_NAME__ "nougat"
