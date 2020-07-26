@@ -1,8 +1,13 @@
 #include "index.h"
 #include "constants.h"
+#include "utils.h"
+#include "config.h"
 
 static void usage(char *binary);
 static void clean();
+static int parse_cmdline(int argc, char *argv[]);
+
+static char *config_path;
 
 void clean()
 {
@@ -10,6 +15,23 @@ void clean()
   git_libgit2_shutdown();
 
   free(repo);
+  free(cfg);
+  config_destroy(&raw_config);
+}
+
+
+int parse_cmdline(int argc, char *argv[])
+{
+  static int c;
+
+  while ((c = getopt(argc, argv, "c:")) != -1)
+    switch (c)
+    {
+      case 'c': config_path = optarg; break;
+      default:  usage(argv[0]); return 1;
+    }
+
+  return 0;
 }
 
 void usage(char *binary)
@@ -21,9 +43,20 @@ void usage(char *binary)
 
 int main(int argc, char *argv[])
 {
+
   D fprintf(stderr, __PG_NAME__": Warning DEBUG is on\n");
 
-  if (argc <= 1) usage(argv[0]);
+  if (parse_cmdline(argc, argv) != 0) return 1;
+
+  cfg = (config*) malloc(sizeof(config));
+  init_config();
+
+  if (config_path) cfg->path = config_path;
+  if (parse_config() != 0) return 1;
+
+  fprintf(stderr, "count %d\n", cfg->category_count);
+  fprintf(stderr, "After parse name %s\n", cfg->repo_category[1]->name);
+  fprintf(stderr, "After parse name %s\n", cfg->title);
 
   git_libgit2_init();
 
