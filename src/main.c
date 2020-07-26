@@ -35,13 +35,18 @@ int main(int argc, char *argv[])
   if (parse_cmdline(argc, argv) != 0) return 1;
 
   cfg = (config*) malloc(sizeof(config));
-  if (config_path) cfg->path = config_path;
-  else             cfg->path = "./nougat.cfg";
+  init_config();
 
+  if (config_path) cfg->path = config_path;
   if (parse_config() != 0) return 1;
+
+  fprintf(stderr, "count %d\n", cfg->category_count);
+  fprintf(stderr, "After parse name %s\n", cfg->repo_category[1]->name);
+  fprintf(stderr, "After parse name %s\n", cfg->title);
 
   create_header();
 
   free(cfg);
+  config_destroy(&raw_config);
   return 0;
 }
