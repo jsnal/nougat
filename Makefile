@@ -5,7 +5,7 @@ VERSION = 0.0.1
 
 LIBS = -lgit2 -lconfig
 INCLUDES =
-CFLAGS = -Wall -O2 -Werror=format-security
+CFLAGS = -Wall -O2 -Werror=format-security -ggdb3
 CFLAGS += $(LIBS)
 
 all: $(NAME)

@@ -32,8 +32,8 @@ int parse_config()
   config_setting_t *category_section;
   config_setting_t *repository_section;
 
-  config_repo_category *repo_category;
-  config_repo *repo;
+  config_repo_category *rc;
+  config_repo *r;
 
   config_init(&raw_config);
 
@@ -52,45 +52,48 @@ int parse_config()
   if ((category_section = config_lookup(&raw_config, "categories")) != NULL)
   {
     unsigned int ci = config_setting_length(category_section);
+    cfg->repo_category = calloc(ci, sizeof(config_repo_category*));
 
     for (unsigned int i = 0; i < ci; i++)
     {
-      /* TODO: let go of this memory */
-      repo_category =
-        (config_repo_category*) malloc(sizeof(config_repo_category));
+      rc = calloc(1, sizeof(config_repo_category));
+      cfg->repo_category[i] = rc;
+      /* repo_category = */
+      /*   (config_repo_category*) malloc(sizeof(config_repo_category)); */
 
       config_setting_t *current_category =
         config_setting_get_elem(category_section, i);
 
       /* Set the values for the config_repo_category struct */
-      config_setting_lookup_string(current_category, "name", &repo_category->name);
+      config_setting_lookup_string(current_category, "name", &rc->name);
 
       if ((repository_section =
            config_setting_lookup(current_category, "repositories")) != NULL)
       {
         unsigned int ri = config_setting_length(repository_section);
+        cfg->repo_category[i]->repos = calloc(ri, sizeof(config_repo*));
 
         for (unsigned int j = 0; j < ri; j++)
         {
-          repo = (config_repo*) malloc(sizeof(config_repo));
+          r = calloc(1, sizeof(config_repo));
+          rc->repos[j] = r;
 
           config_setting_t *current_repo =
             config_setting_get_elem(repository_section, j);
 
           /* Set the values for the config_repo struct */
-          config_setting_lookup_string(current_repo, "path", &repo->path);
+          config_setting_lookup_string(current_repo, "path", &r->path);
 
-          repo_category->repo[j] = repo;
-          repo_category->repo_count = j;
+          rc->repo_count = j;
         }
       }
 
-      cfg->repo_category[i] = repo_category;
       cfg->category_count = i;
     }
   }
 
-  fprintf(stderr, "Repo path: %s\n", cfg->repo_category[1]->repo[0]->path);
+  /* fprintf(stderr, "Repo path: %s\n", cfg->repo_category[1]->repos[0]->path); */
+  /* printf("Category name: %s\n", cfg->repo_category[0]->name); */
 
   return 0;
 }

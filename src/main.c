@@ -15,6 +15,15 @@ void clean()
   git_libgit2_shutdown();
 
   free(repo);
+  for (unsigned int i = 0; i < cfg->category_count; i++)
+  {
+    for (unsigned int j = 0; j < cfg->repo_category[i]->repo_count; j++)
+      free(cfg->repo_category[i]->repos[j]);
+    free(cfg->repo_category[i]->repos);
+    free(cfg->repo_category[i]);
+  }
+
+  free(cfg->repo_category);
   free(cfg);
   config_destroy(&raw_config);
 }
@@ -48,44 +57,49 @@ int main(int argc, char *argv[])
 
   if (parse_cmdline(argc, argv) != 0) return 1;
 
-  cfg = (config*) malloc(sizeof(config));
+  cfg = malloc(sizeof(config));
   init_config();
 
   if (config_path) cfg->path = config_path;
   if (parse_config() != 0) return 1;
 
-  fprintf(stderr, "count %d\n", cfg->category_count);
-  fprintf(stderr, "After parse name %s\n", cfg->repo_category[1]->name);
-  fprintf(stderr, "After parse name %s\n", cfg->title);
+  /* fprintf(stderr, "count %d\n", cfg->category_count); */
+  /* fprintf(stderr, "After parse name %s\n", cfg->repo_category[1]->repos[0]->path); */
+  /* fprintf(stderr, "After parse name %s\n", cfg->title); */
 
   git_libgit2_init();
 
-  repo = (repository*) malloc(sizeof(repository));
+  repo = malloc(sizeof(repository));
   FILE *index_fp = fopen("./index.html", "w");
 
-  for (int i = 1; i < argc; i++)
+  for (unsigned int i = 0; i < cfg->category_count; i++)
   {
-    repo->path = argv[i];
 
-    /* Test if the given path exists */
-    if (!realpath(repo->path, buf))
+    for (unsigned int j = 0; j < cfg->repo_category[i]->repo_count; j++)
     {
-      D fprintf(stderr, __PG_NAME__": %s is not a valid path\n", repo->path);
-      continue;
-    }
+      /* TODO: Add tilda HOME expansion */
+      repo->path = cfg->repo_category[i]->repos[j]->path;
 
-    /* Test that it is a git project and store it if it is */
-    if (git_repository_open_ext(&repo->repo, repo->path,
-        GIT_REPOSITORY_OPEN_NO_SEARCH, NULL))
-    {
-      D fprintf(stderr, __PG_NAME__": %s is not a valid git repository\n",
-                repo->path);
-      continue;
-    }
+      /* Test if the given path exists */
+      if (!realpath(repo->path, buf))
+      {
+        D fprintf(stderr, __PG_NAME__": %s is not a valid path\n", repo->path);
+        continue;
+      }
 
-    /* If fopen failed, just default to printing to stdout */
-    if (index_fp) index_repo(index_fp, repo, i, argc);
-    else          index_repo(stdout, repo, i, argc);
+      /* Test that it is a git project and store it if it is */
+      if (git_repository_open_ext(&repo->repo, repo->path,
+            GIT_REPOSITORY_OPEN_NO_SEARCH, NULL))
+      {
+        D fprintf(stderr, __PG_NAME__": %s is not a valid git repository\n",
+            repo->path);
+        continue;
+      }
+
+      /* If fopen failed, just default to printing to stdout */
+      if (index_fp) index_repo(index_fp, repo, i, argc);
+      else          index_repo(stdout, repo, i, argc);
+    }
   }
 
   if (index_fp) fclose(index_fp);
