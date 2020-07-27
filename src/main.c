@@ -11,13 +11,12 @@ static char *config_path;
 
 void clean()
 {
-  git_repository_free(repo->repo);
   git_libgit2_shutdown();
-
   free(repo);
-  for (unsigned int i = 0; i < cfg->category_count; i++)
+
+  for (unsigned int i = 0; i <= cfg->category_count; i++)
   {
-    for (unsigned int j = 0; j < cfg->repo_category[i]->repo_count; j++)
+    for (unsigned int j = 0; j <= cfg->repo_category[i]->repo_count; j++)
       free(cfg->repo_category[i]->repos[j]);
     free(cfg->repo_category[i]->repos);
     free(cfg->repo_category[i]);
@@ -62,20 +61,15 @@ int main(int argc, char *argv[])
 
   if (config_path) cfg->path = config_path;
   if (parse_config() != 0) return 1;
-
-  /* fprintf(stderr, "count %d\n", cfg->category_count); */
-  /* fprintf(stderr, "After parse name %s\n", cfg->repo_category[1]->repos[0]->path); */
-  /* fprintf(stderr, "After parse name %s\n", cfg->title); */
-
-  git_libgit2_init();
+  if (git_libgit2_init() != 1) return 1;
 
   repo = malloc(sizeof(repository));
   FILE *index_fp = fopen("./index.html", "w");
 
-  for (unsigned int i = 0; i < cfg->category_count; i++)
+  for (unsigned int i = 0; i <= cfg->category_count; i++)
   {
 
-    for (unsigned int j = 0; j < cfg->repo_category[i]->repo_count; j++)
+    for (unsigned int j = 0; j <= cfg->repo_category[i]->repo_count; j++)
     {
       /* TODO: Add tilda HOME expansion */
       repo->path = cfg->repo_category[i]->repos[j]->path;
@@ -97,13 +91,16 @@ int main(int argc, char *argv[])
       }
 
       /* If fopen failed, just default to printing to stdout */
-      if (index_fp) index_repo(index_fp, repo, i, argc);
-      else          index_repo(stdout, repo, i, argc);
+      if (index_fp) index_repo(index_fp, i, j);
+      else          index_repo(stdout,   i, j);
+
+      /* Free the repository object everytime or else they will build up */
+      git_repository_free(repo->repo);
     }
   }
 
   if (index_fp) fclose(index_fp);
 
-  clean();
+  clean(repo);
   return 0;
 }

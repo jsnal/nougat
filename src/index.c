@@ -1,7 +1,7 @@
 #include "index.h"
 
 static void write_table_header(FILE *fp);
-static void write_table_row(FILE *fp, repository *repo);
+static void write_table_row(FILE *fp);
 static void write_table_end(FILE *fp);
 
 void write_table_header(FILE *fp)
@@ -17,7 +17,7 @@ void write_table_header(FILE *fp)
       "</thead><tbody>\n", fp);
 }
 
-void write_table_row(FILE *fp, repository *repo)
+void write_table_row(FILE *fp)
 {
   git_commit *commit = NULL;
   const git_signature *author;
@@ -67,7 +67,7 @@ void write_table_end(FILE *fp)
   fputs("</tbody>\n</table>\n</div>\n</body>\n</html>\n", fp);
 }
 
-void index_repo(FILE *fp, repository *repo, int current, int total)
+void index_repo(FILE *fp, int ci, int ri)
 {
   if (!repo) return;
   D fprintf(stderr, __PG_NAME__": Indexing %s\n", repo->path);
@@ -75,7 +75,7 @@ void index_repo(FILE *fp, repository *repo, int current, int total)
   FILE *read_fp;
   char path[PATH_MAX];
 
-  if (current == 1)
+  if (ci == 0 && ri == 0)
   {
     write_header(fp, "My Title");
     write_table_header(fp);
@@ -114,7 +114,8 @@ void index_repo(FILE *fp, repository *repo, int current, int total)
     fclose(read_fp);
   }
 
-  write_table_row(fp, repo);
+  write_table_row(fp);
 
-  if (current == (total - 1)) write_table_end(fp);
+  if (ci == cfg->category_count && ri == cfg->repo_category[ci]->repo_count)
+    write_table_end(fp);
 }
