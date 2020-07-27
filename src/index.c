@@ -1,17 +1,27 @@
 #include "index.h"
 
+static void write_page_header(FILE *fp);
+static void write_category_heading(FILE *fp, const char *heading);
 static void write_table_header(FILE *fp);
 static void write_table_row(FILE *fp);
 static void write_table_end(FILE *fp);
 
-void write_table_header(FILE *fp)
+void write_page_header(FILE *fp)
 {
-  /* Replace from the config file */
-  fprintf(fp, "<table>\n<td><span class=\"desc\">%s", "TITLE!");
+  fprintf(fp, "<table>\n<td><span class=\"desc\">%s", cfg->title);
 
   fputs("</span></td></tr><tr><td></td><td>\n"
-      "</td></tr>\n</table>\n<hr/>\n<div id=\"content\">\n"
-      "<table id=\"index\"><thead>\n"
+      "</td></tr>\n</table>\n<hr/>\n<div id=\"content\">", fp);
+}
+
+void write_category_heading(FILE *fp, const char *heading)
+{
+  fprintf(fp, "<h1>%s</h1>\n", heading);
+}
+
+void write_table_header(FILE *fp)
+{
+  fputs("<table id=\"index\"><thead>"
       "<tr><td><b>Name</b></td><td><b>Description</b></td><td><b>Owner</b></td>"
       "<td><b>Last commit</b></td></tr>"
       "</thead><tbody>\n", fp);
@@ -64,7 +74,7 @@ err:
 
 void write_table_end(FILE *fp)
 {
-  fputs("</tbody>\n</table>\n</div>\n</body>\n</html>\n", fp);
+  fputs("</tbody>\n</table>\n", fp);
 }
 
 void index_repo(FILE *fp, int ci, int ri)
@@ -75,10 +85,18 @@ void index_repo(FILE *fp, int ci, int ri)
   FILE *read_fp;
   char path[PATH_MAX];
 
+  /* Write the title and other things at the top of the page */
   if (ci == 0 && ri == 0)
   {
     write_header(fp, "My Title");
+    write_page_header(fp);
+  }
+
+  /* Write category heading and table headings */
+  if (ri == 0)
+  {
     write_table_header(fp);
+    write_category_heading(fp, cfg->repo_category[ci]->name);
   }
 
   /* use directory name as name */
@@ -116,6 +134,11 @@ void index_repo(FILE *fp, int ci, int ri)
 
   write_table_row(fp);
 
-  if (ci == cfg->category_count && ri == cfg->repo_category[ci]->repo_count)
+  /* Write the end of the table and the end of a category */
+  if (ri == cfg->repo_category[ci]->repo_count)
     write_table_end(fp);
+
+  /* Write the end of the html page */
+  if (ci == cfg->category_count && ri == cfg->repo_category[ci]->repo_count)
+    write_footer(fp);
 }

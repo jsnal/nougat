@@ -61,5 +61,5 @@ void write_header(FILE *fp, const char *title)
 
 void write_footer(FILE *fp)
 {
-  fputs("</body>\n</html>\n", fp);
+  fputs("</div>\n</body>\n</html>\n", fp);
 }
