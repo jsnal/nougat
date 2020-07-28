@@ -56,6 +56,7 @@ void write_header(FILE *fp, const char *title)
   xml_encode(fp, title, strlen(title));
   fprintf(fp, "</title>\n");
   fprintf(fp, "<link rel=\"stylesheet\" type=\"text/css\" href=\"%sstyle.css\" />\n", "./");
+  fprintf(fp, "<link href='http://fonts.googleapis.com/css?family=Lato&subset=latin,latin-ext' rel='stylesheet' type='text/css'>");
   fputs("</head>\n<body>\n", fp);
 }
 
