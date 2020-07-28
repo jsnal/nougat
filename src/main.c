@@ -8,6 +8,7 @@ static void clean();
 static int parse_cmdline(int argc, char *argv[]);
 
 static char *config_path;
+static repository *current_repo;
 
 void clean()
 {
@@ -68,7 +69,7 @@ int main(int argc, char *argv[])
 
   if (git_libgit2_init() != 1) return 1;
 
-  repo = malloc(sizeof(repository));
+  /* repo = malloc(sizeof(repository)); */
   FILE *index_fp = fopen(cfg->index_path, "w");
 
   for (unsigned int i = 0; i <= cfg->category_count; i++)
@@ -77,30 +78,32 @@ int main(int argc, char *argv[])
     for (unsigned int j = 0; j <= cfg->repo_category[i]->repo_count; j++)
     {
       /* TODO: Add tilda HOME expansion */
-      repo->path = cfg->repo_category[i]->repos[j]->path;
+      /* repo->path = cfg->repo_category[i]->repos[j]->path; */
+      current_repo = cfg->repo_category[i]->repos[j];
 
       /* Test if the given path exists */
-      if (!realpath(repo->path, buf))
+      if (!realpath(current_repo->path, buf))
       {
-        D fprintf(stderr, __PG_NAME__": %s is not a valid path\n", repo->path);
+        D fprintf(stderr, __PG_NAME__": %s is not a valid path\n",
+                  current_repo->path);
         continue;
       }
 
       /* Test that it is a git project and store it if it is */
-      if (git_repository_open_ext(&repo->repo, repo->path,
+      if (git_repository_open_ext(&current_repo->repo, current_repo->path,
             GIT_REPOSITORY_OPEN_NO_SEARCH, NULL))
       {
         D fprintf(stderr, __PG_NAME__": %s is not a valid git repository\n",
-            repo->path);
+            current_repo->path);
         continue;
       }
 
       /* If fopen failed, notify the user but don't fail the whole program */
-      if (index_fp) index_repo(index_fp, i, j);
+      if (index_fp) index_repo(index_fp, current_repo, i, j);
       else          fprintf(stderr, "Unable to open path %s\n", cfg->index_path);
 
       /* Free the repository object everytime or else they will build up */
-      git_repository_free(repo->repo);
+      git_repository_free(current_repo->repo);
     }
   }
 

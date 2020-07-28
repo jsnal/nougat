@@ -14,12 +14,14 @@ HEADERS = \
 	   src/utils.h \
 	   src/index.h \
 	   src/constants.h \
+	   src/repository.h \
 	   src/config.h
 
 SOURCES = \
 	   src/main.c \
 	   src/utils.c \
 	   src/index.c \
+	   src/repository.c \
 	   src/config.c
 
 OBJECTS = ${SOURCES:.c=.o}

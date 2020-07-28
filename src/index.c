@@ -3,7 +3,7 @@
 static void write_page_header(FILE *fp);
 static void write_category_heading(FILE *fp, const char *heading);
 static void write_table_header(FILE *fp);
-static void write_table_row(FILE *fp);
+static void write_table_row(FILE *fp, repository *repo);
 static void write_table_end(FILE *fp);
 
 void write_page_header(FILE *fp)
@@ -27,7 +27,7 @@ void write_table_header(FILE *fp)
       "</thead><tbody>\n", fp);
 }
 
-void write_table_row(FILE *fp)
+void write_table_row(FILE *fp, repository *repo)
 {
   git_commit *commit = NULL;
   const git_signature *author;
@@ -77,7 +77,7 @@ void write_table_end(FILE *fp)
   fputs("</tbody>\n</table>\n", fp);
 }
 
-void index_repo(FILE *fp, int ci, int ri)
+void index_repo(FILE *fp, repository *repo, int ci, int ri)
 {
   if (!repo) return;
   D fprintf(stderr, __PG_NAME__": Indexing %s\n", repo->path);
@@ -132,7 +132,7 @@ void index_repo(FILE *fp, int ci, int ri)
     fclose(read_fp);
   }
 
-  write_table_row(fp);
+  write_table_row(fp, repo);
 
   /* Write the end of the table and the end of a category */
   if (ri == cfg->repo_category[ci]->repo_count)

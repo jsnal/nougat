@@ -34,7 +34,7 @@ int parse_config()
   config_setting_t *repository_section;
 
   config_repo_category *rc;
-  config_repo *r;
+  repository *r;
 
   config_init(&raw_config);
 
@@ -73,11 +73,11 @@ int parse_config()
            config_setting_lookup(current_category, "repositories")) != NULL)
       {
         unsigned int ri = config_setting_length(repository_section);
-        cfg->repo_category[i]->repos = calloc(ri, sizeof(config_repo*));
+        cfg->repo_category[i]->repos = calloc(ri, sizeof(repository*));
 
         for (unsigned int j = 0; j < ri; j++)
         {
-          r = calloc(1, sizeof(config_repo));
+          r = calloc(1, sizeof(repository));
           rc->repos[j] = r;
 
           config_setting_t *current_repo =

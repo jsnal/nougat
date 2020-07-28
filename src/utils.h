@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 #include <err.h>
 #include <unistd.h>
 #include <ctype.h>
@@ -30,5 +31,7 @@ void write_footer(FILE *fp);
 void xml_encode(FILE *fp, const char *s, size_t len);
 void join_path(char *buf, size_t bufsiz, const char *path, const char *path2);
 void format_git_time_short(FILE *fp, const git_time *gtime);
+
+char buf[PATH_MAX];
 
 #endif

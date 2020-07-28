@@ -2,20 +2,17 @@
 #define CONFIG_H
 
 #include "utils.h"
+#include "repository.h"
 #include <libconfig.h>
 
-/* We can add more options the the repo in the future if we want. For exmaple,
- * we could override the description, owner, etc. in the config. */
-typedef struct config_repo {
-  const char *path;
-} config_repo;
-
+/* The category struct uses the repository struct defined in repository.c. */
 typedef struct config_repo_category {
   const char *name;
   unsigned int repo_count;
-  struct config_repo **repos;
+  struct repository **repos;
 } config_repo_category;
 
+/* TODO: Create an option to turn off categories completely */
 typedef struct config {
   const char *title;
   const char *path;
