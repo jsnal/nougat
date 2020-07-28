@@ -7,10 +7,9 @@ static void write_table_end(FILE *fp);
 void write_table_header(FILE *fp)
 {
   /* Replace from the config file */
-  fprintf(fp, "<table>\n<td><span class=\"desc\">%s", "TITLE!");
+  fprintf(fp, "<div id=\"topbar\"><ul><li><span>Title</span></li></ul></div>");
 
-  fputs("</span></td></tr><tr><td></td><td>\n"
-      "</td></tr>\n</table>\n<hr/>\n<div id=\"content\">\n"
+  fputs("<div id=\"content\">\n"
       "<table id=\"index\"><thead>\n"
       "<tr><td><b>Name</b></td><td><b>Description</b></td><td><b>Owner</b></td>"
       "<td><b>Last commit</b></td></tr>"
