@@ -21,8 +21,9 @@ void write_category_heading(FILE *fp, const char *heading)
 
 void write_table_header(FILE *fp)
 {
-  fputs("<table id=\"index\"><thead>"
-      "<tr><td><b>Name</b></td><td><b>Description</b></td><td><b>Owner</b></td>"
+  fputs("<table id=\"index\"><thead>", fp);
+
+  fputs("<tr><td><b>Name</b></td><td><b>Description</b></td><td><b>Owner</b></td>"
       "<td><b>Last commit</b></td></tr>"
       "</thead><tbody>\n", fp);
 }
