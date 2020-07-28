@@ -20,6 +20,7 @@ typedef struct config {
   const char *title;
   const char *path;
   const char *style_path;
+  const char *index_path;
   const char *icon_path;
   unsigned int category_count;
   struct config_repo_category **repo_category;

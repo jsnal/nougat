@@ -22,6 +22,7 @@ void init_config()
   cfg->title      = "Git Repositories";
   cfg->path       = "./nougat.cfg";
   cfg->style_path = "./style.css";
+  cfg->index_path = "./index.html";
   cfg->icon_path  = "./icon.ico";
 }
 
@@ -47,6 +48,7 @@ int parse_config()
    * found in the given config, it defaults to the values in init_config(). */
   config_lookup_string(&raw_config, "title", &cfg->title);
   config_lookup_string(&raw_config, "style", &cfg->style_path);
+  config_lookup_string(&raw_config, "index", &cfg->index_path);
   config_lookup_string(&raw_config, "icon",  &cfg->icon_path);
 
   if ((category_section = config_lookup(&raw_config, "categories")) != NULL)

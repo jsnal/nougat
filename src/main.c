@@ -60,11 +60,16 @@ int main(int argc, char *argv[])
   init_config();
 
   if (config_path) cfg->path = config_path;
-  if (parse_config() != 0) return 1;
+  if (parse_config() != 0)
+  {
+    fprintf(stderr, "Unable to parse %s\n", cfg->path);
+    return 1;
+  }
+
   if (git_libgit2_init() != 1) return 1;
 
   repo = malloc(sizeof(repository));
-  FILE *index_fp = fopen("./index.html", "w");
+  FILE *index_fp = fopen(cfg->index_path, "w");
 
   for (unsigned int i = 0; i <= cfg->category_count; i++)
   {
@@ -90,9 +95,9 @@ int main(int argc, char *argv[])
         continue;
       }
 
-      /* If fopen failed, just default to printing to stdout */
+      /* If fopen failed, notify the user but don't fail the whole program */
       if (index_fp) index_repo(index_fp, i, j);
-      else          index_repo(stdout,   i, j);
+      else          fprintf(stderr, "Unable to open path %s\n", cfg->index_path);
 
       /* Free the repository object everytime or else they will build up */
       git_repository_free(repo->repo);
