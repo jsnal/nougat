@@ -2,6 +2,8 @@
 #define REPOSITORY_H
 
 #include "utils.h"
+#include "config.h"
+#include <sys/stat.h>
 
 typedef struct delta_info {
   git_patch *patch;
@@ -49,5 +51,7 @@ typedef struct repository {
   delta_info **delta;
   size_t ndeltas;
 } repository;
+
+int write_repo(repository *repo);
 
 #endif

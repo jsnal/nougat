@@ -52,6 +52,7 @@ void usage(char *binary)
 
 int main(int argc, char *argv[])
 {
+  char cwd[PATH_MAX];
 
   D fprintf(stderr, __PG_NAME__": Warning DEBUG is on\n");
 
@@ -63,13 +64,17 @@ int main(int argc, char *argv[])
   if (config_path) cfg->path = config_path;
   if (parse_config() != 0)
   {
-    fprintf(stderr, "Unable to parse %s\n", cfg->path);
+    fprintf(stderr, __PG_NAME__": Unable to parse %s\n", cfg->path);
     return 1;
   }
 
   if (git_libgit2_init() != 1) return 1;
 
-  /* repo = malloc(sizeof(repository)); */
+  /* Get the current working path so we can return to it later */
+  if (getcwd(cwd, sizeof(cwd)) != NULL) cfg->working_path = cwd;
+  else
+    fprintf(stderr, __PG_NAME__": Problems getting the current working path");
+
   FILE *index_fp = fopen(cfg->index_path, "w");
 
   for (unsigned int i = 0; i <= cfg->category_count; i++)
@@ -101,6 +106,9 @@ int main(int argc, char *argv[])
       /* If fopen failed, notify the user but don't fail the whole program */
       if (index_fp) index_repo(index_fp, current_repo, i, j);
       else          fprintf(stderr, "Unable to open path %s\n", cfg->index_path);
+
+      /* Write all of the individual repo information for the current repo */
+      write_repo(current_repo);
 
       /* Free the repository object everytime or else they will build up */
       git_repository_free(current_repo->repo);
