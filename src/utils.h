@@ -26,7 +26,7 @@
 #define D if (false)
 #endif
 
-void write_header(FILE *fp, const char *title);
+void write_header(FILE *fp, const char *relpath);
 void write_footer(FILE *fp);
 void xml_encode(FILE *fp, const char *s, size_t len);
 void join_path(char *buf, size_t bufsiz, const char *path, const char *path2);

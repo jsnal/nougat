@@ -44,7 +44,7 @@ void xml_encode(FILE *fp, const char *s, size_t len)
   }
 }
 
-void write_header(FILE *fp, const char *title)
+void write_header(FILE *fp, const char *relpath)
 {
   fputs("<!DOCTYPE html>\n"
       "<html>\n<head>\n"
@@ -54,9 +54,9 @@ void write_header(FILE *fp, const char *title)
   /* TODO: Add this line for favicon support */
   /* fprintf(fp, "<link rel=\"icon\" type=\"image/png\" href=\"%sfavicon.png\" />\n",relpath); */
 
-  xml_encode(fp, title, strlen(title));
+  xml_encode(fp, cfg->title, strlen(cfg->title));
   fprintf(fp, "</title>\n");
-  fprintf(fp, "<link rel=\"stylesheet\" type=\"text/css\" href=\"%s\" />\n", cfg->style_path);
+  fprintf(fp, "<link rel=\"stylesheet\" type=\"text/css\" href=\"%s%s\" />\n", relpath, cfg->style_path);
   fprintf(fp, "<link href='http://fonts.googleapis.com/css?family=Lato&subset=latin,latin-ext' rel='stylesheet' type='text/css'>");
   fputs("</head>\n<body>\n", fp);
 }

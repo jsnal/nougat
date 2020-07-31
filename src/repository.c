@@ -1,6 +1,8 @@
 #include "repository.h"
 
 static void initialize(repository *repo);
+static void write_summary(FILE *fp, repository *repo);
+static void write_page_header(FILE *fp, repository *repo, const char *relpath);
 
 static git_object *obj = NULL;
 static const git_oid *head = NULL;
@@ -56,8 +58,36 @@ void initialize(repository *repo)
   git_object_free(obj);
 }
 
+void write_page_header(FILE *fp, repository *repo, const char *relpath)
+{
+  /* TODO: Put the logo to the left of this table-row */
+  fputs("<table id=\"header\">\n<tbody>\n<tr><td>"
+        "<a href=\"../index.html\">index</a> : ", fp);
+  fprintf(fp, "%s<td></tr>\n<tr><td>%s</td></tr>\n", repo->name, repo->desc);
+  /* TODO: Add the clone URL */
+
+  fputs("</tbody>\n</table>\n<table id=\"nav\">\n<tbody>\n", fp);
+  fprintf(fp, "<tr><td>"
+              "\n<a href=\"#\">about</a>"
+              "\n<a href=\"%1$ssummary.html\">summary</a>"
+              "\n<a href=\"%1$srefs.html\">refs</a>"
+              "\n<a href=\"%1$slog.html\">log</a>"
+              "\n<a href=\"%1$stree.html\">tree</a>"
+              "\n</td></tr>", relpath);
+  fputs("\n</tbody>\n</table>\n", fp);
+}
+
+void write_summary(FILE *fp, repository *repo)
+{
+  write_header(fp, "../");
+  write_page_header(fp, repo, "../");
+  write_footer(fp);
+}
+
 int write_repo(repository *repo)
 {
+  FILE *fp;
+
   if (!git_revparse_single(&obj, repo->repo, "HEAD")) head = git_object_id(obj);
   git_object_free(obj);
 
@@ -67,14 +97,10 @@ int write_repo(repository *repo)
   mkdir(repo->name, 0700);
   chdir(repo->name);
 
-  FILE *fp;
-  fp = fopen("log.html", "w");
+  /* Write the summary file */
+  fp = fopen("summary.html", "w");
+  write_summary(fp, repo);
   fclose(fp);
-
-  printf("working path: %s\n", cfg->working_path);
-  printf("license: %s\n", repo->license);
-  printf("readme: %s\n", repo->readme);
-  printf("modules: %s\n", repo->submodules);
 
   /* Return back to the execution location */
   chdir(cfg->working_path);

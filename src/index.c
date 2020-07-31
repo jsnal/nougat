@@ -56,7 +56,7 @@ void write_table_row(FILE *fp, repository *repo)
 
   fputs("<tr><td><a href=\"", fp);
   xml_encode(fp, repo->stripped_name, strlen(repo->stripped_name));
-  fputs("/log.html\">", fp);
+  fputs("/summary.html\">", fp);
   xml_encode(fp, repo->stripped_name, strlen(repo->stripped_name));
   fputs("</a></td><td>", fp);
   xml_encode(fp, repo->desc, strlen(repo->desc));
@@ -89,7 +89,7 @@ void index_repo(FILE *fp, repository *repo, int ci, int ri)
   /* Write the title and other things at the top of the page */
   if (ci == 0 && ri == 0)
   {
-    write_header(fp, "My Title");
+    write_header(fp, "");
     write_page_header(fp);
   }
 
