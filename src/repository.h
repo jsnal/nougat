@@ -27,15 +27,20 @@ typedef struct repository {
   /* reference info */
   struct git_reference *ref;
 
-  /* commit info */
+  /* delta info */
+  delta_info **delta;
+  size_t ndeltas;
+} repository;
+
+typedef struct commit_info {
   const git_oid *id;
-  char oid[GIT_OID_HEXSZ + 1];
-  char parent_oid[GIT_OID_HEXSZ + 1];
+  char hash[GIT_OID_HEXSZ + 1];
+  char parent_hash[GIT_OID_HEXSZ + 1];
 
   const git_signature *author;
   const git_signature *committer;
   const char          *summary;
-  const char          *msg;
+  const char          *message;
 
   git_diff   *diff;
   git_commit *commit;
@@ -46,11 +51,7 @@ typedef struct repository {
   size_t add_count;
   size_t del_count;
   size_t file_count;
-
-  /* delta info */
-  delta_info **delta;
-  size_t ndeltas;
-} repository;
+} commit_info;
 
 int write_repo(repository *repo);
 

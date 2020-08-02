@@ -1,8 +1,13 @@
 #include "repository.h"
 
 static void initialize(repository *repo);
+static commit_info *get_commit_info(repository *repo, const git_oid *id);
+static void free_commit_info(commit_info *ci);
 static void write_summary(FILE *fp, repository *repo);
 static void write_page_header(FILE *fp, repository *repo, const char *relpath);
+static void write_log(FILE *fp, repository *repo);
+static void write_log_line(FILE *fp, repository *repo);
+static void write_log_header(FILE *fp);
 
 static git_object *obj = NULL;
 static const git_oid *head = NULL;
@@ -58,6 +63,79 @@ void initialize(repository *repo)
   git_object_free(obj);
 }
 
+void free_commit_info(commit_info *ci)
+{
+  if (!ci) return;
+
+  git_diff_free(ci->diff);
+  git_tree_free(ci->commit_tree);
+  git_tree_free(ci->parent_tree);
+  git_commit_free(ci->commit);
+  git_commit_free(ci->parent);
+  free(ci);
+}
+
+commit_info *get_commit_info(repository *repo, const git_oid *id)
+{
+  commit_info *ci = calloc(1, sizeof(commit_info));
+
+  if (git_commit_lookup(&(ci->commit), repo->repo, id)) goto err;
+  ci->id = id;
+
+  git_oid_tostr(ci->hash, sizeof(ci->hash), git_commit_id(ci->commit));
+  git_oid_tostr(ci->parent_hash, sizeof(ci->parent_hash),
+                git_commit_parent_id(ci->commit, 0));
+
+  ci->author = git_commit_author(ci->commit);
+  ci->committer = git_commit_committer(ci->commit);
+  ci->summary = git_commit_summary(ci->commit);
+  ci->message = git_commit_message(ci->commit);
+
+  return ci;
+err:
+  return NULL;
+}
+
+static void write_log(FILE *fp, repository *repo)
+{
+  commit_info *ci;
+  git_revwalk *w = NULL;
+  git_oid id;
+  char path[PATH_MAX], hash[GIT_OID_HEXSZ + 1];
+  FILE *cfp;
+
+  write_log_header(fp);
+
+  git_revwalk_new(&w, repo->repo);
+  git_revwalk_push(w, head);
+  git_revwalk_simplify_first_parent(w);
+
+  while (!git_revwalk_next(&id, w))
+  {
+    git_oid_tostr(hash, sizeof(hash), &id);
+    snprintf(path, sizeof(path), "commit/%s.html", hash);
+
+    /* If the commit hash has already been created, skip to the next hash */
+    if (!access(path, F_OK)) continue;
+
+    if (!(ci = get_commit_info(repo, &id))) break;
+
+    free_commit_info(ci);
+  }
+
+  git_revwalk_free(w);
+}
+
+static void write_log_line(FILE *fp, repository *repo)
+{}
+
+static void write_log_header(FILE *fp)
+{
+  fputs("<table id=\"log\">\n<thead>\n<tr><td>Age</td><td>Commit Message</td>"
+        "<td>Author</td><td>Files</td><td>Lines</td></tr>\n</thead>\n<tbody>\n",
+        fp);
+}
+
 void write_page_header(FILE *fp, repository *repo, const char *relpath)
 {
   /* TODO: Put the logo to the left of this table-row */
@@ -81,6 +159,7 @@ void write_summary(FILE *fp, repository *repo)
 {
   write_header(fp, "../");
   write_page_header(fp, repo, "../");
+  write_log(fp, repo);
   write_footer(fp);
 }
 
