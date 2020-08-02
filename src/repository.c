@@ -149,11 +149,11 @@ void write_page_header(FILE *fp, repository *repo, const char *relpath)
   fputs("</tbody>\n</table>\n<table id=\"nav\">\n<tbody>\n", fp);
   fprintf(fp, "<tr><td>"
               "\n<a href=\"#\">about</a>"
-              "\n<a href=\"%1$ssummary.html\">summary</a>"
-              "\n<a href=\"%1$srefs.html\">refs</a>"
-              "\n<a href=\"%1$slog.html\">log</a>"
-              "\n<a href=\"%1$stree.html\">tree</a>"
-              "\n</td></tr>", relpath);
+              "\n<a href=\"summary.html\">summary</a>"
+              "\n<a href=\"refs.html\">refs</a>"
+              "\n<a href=\"log.html\">log</a>"
+              "\n<a href=\"tree.html\">tree</a>"
+              "\n</td></tr>");
   fputs("\n</tbody>\n</table>\n", fp);
 }
 

@@ -5,13 +5,6 @@
 #include "config.h"
 #include <sys/stat.h>
 
-typedef struct delta_info {
-  git_patch *patch;
-
-  size_t add_count;
-  size_t del_count;
-} delta_info;
-
 typedef struct repository {
   git_repository *repo;
   const char *path;
@@ -26,10 +19,6 @@ typedef struct repository {
 
   /* reference info */
   struct git_reference *ref;
-
-  /* delta info */
-  delta_info **delta;
-  size_t ndeltas;
 } repository;
 
 typedef struct commit_info {
@@ -51,7 +40,18 @@ typedef struct commit_info {
   size_t add_count;
   size_t del_count;
   size_t file_count;
+
+  struct delta_info **deltas;
+  size_t ndeltas;
 } commit_info;
+
+typedef struct delta_info {
+  git_patch *patch;
+  size_t add_count;
+  size_t del_count;
+} delta_info;
+
+repository *repo;
 
 int write_repo(repository *repo);
 
