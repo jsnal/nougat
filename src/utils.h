@@ -26,6 +26,12 @@
 #define D if (false)
 #endif
 
+/* Get the length of an array */
+#define LENGTH(X) (sizeof(X) / sizeof(X[0]))
+
+/* The maximum number of files that can be open at one time */
+#define MAX_FOPEN 2
+
 void write_header(FILE *fp, const char *relpath);
 void write_footer(FILE *fp);
 void xml_encode(FILE *fp, const char *s, size_t len);

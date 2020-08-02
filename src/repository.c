@@ -3,9 +3,8 @@
 static void initialize(repository *repo);
 static commit_info *get_commit_info(repository *repo, const git_oid *id);
 static void free_commit_info(commit_info *ci);
-static void write_summary(FILE *fp, repository *repo);
 static void write_page_header(FILE *fp, repository *repo, const char *relpath);
-static void write_log(FILE *fp, repository *repo);
+static void write_log(FILE *fp[], repository *repo);
 static void write_log_line(FILE *fp, repository *repo);
 static void write_log_header(FILE *fp);
 
@@ -96,7 +95,7 @@ err:
   return NULL;
 }
 
-static void write_log(FILE *fp, repository *repo)
+void write_log(FILE *fp[], repository *repo)
 {
   commit_info *ci;
   git_revwalk *w = NULL;
@@ -104,7 +103,8 @@ static void write_log(FILE *fp, repository *repo)
   char path[PATH_MAX], hash[GIT_OID_HEXSZ + 1];
   FILE *cfp;
 
-  write_log_header(fp);
+  /* Write a log header on all the passed in files */
+  for (unsigned int i = 0; i < MAX_FOPEN; i++) write_log_header(fp[i]);
 
   git_revwalk_new(&w, repo->repo);
   git_revwalk_push(w, head);
@@ -129,7 +129,7 @@ static void write_log(FILE *fp, repository *repo)
 static void write_log_line(FILE *fp, repository *repo)
 {}
 
-static void write_log_header(FILE *fp)
+void write_log_header(FILE *fp)
 {
   fputs("<table id=\"log\">\n<thead>\n<tr><td>Age</td><td>Commit Message</td>"
         "<td>Author</td><td>Files</td><td>Lines</td></tr>\n</thead>\n<tbody>\n",
@@ -138,6 +138,8 @@ static void write_log_header(FILE *fp)
 
 void write_page_header(FILE *fp, repository *repo, const char *relpath)
 {
+  write_header(fp, relpath);
+
   /* TODO: Put the logo to the left of this table-row */
   fputs("<table id=\"header\">\n<tbody>\n<tr><td>"
         "<a href=\"../index.html\">index</a> : ", fp);
@@ -155,17 +157,9 @@ void write_page_header(FILE *fp, repository *repo, const char *relpath)
   fputs("\n</tbody>\n</table>\n", fp);
 }
 
-void write_summary(FILE *fp, repository *repo)
-{
-  write_header(fp, "../");
-  write_page_header(fp, repo, "../");
-  write_log(fp, repo);
-  write_footer(fp);
-}
-
 int write_repo(repository *repo)
 {
-  FILE *fp;
+  FILE *fp[MAX_FOPEN];
 
   if (!git_revparse_single(&obj, repo->repo, "HEAD")) head = git_object_id(obj);
   git_object_free(obj);
@@ -177,9 +171,21 @@ int write_repo(repository *repo)
   chdir(repo->name);
 
   /* Write the summary file */
-  fp = fopen("summary.html", "w");
-  write_summary(fp, repo);
-  fclose(fp);
+  fp[0] = fopen("summary.html", "w");
+  write_page_header(fp[0], repo, "../");
+
+  /* Write the log file */
+  fp[1] = fopen("log.html", "w");
+  write_page_header(fp[1], repo, "../");
+  write_log(fp, repo);
+
+  fclose(fp[1]);
+
+  /* write refs */
+
+  /* Close the summary file */
+  write_footer(fp[0]);
+  fclose(fp[0]);
 
   /* Return back to the execution location */
   chdir(cfg->working_path);
