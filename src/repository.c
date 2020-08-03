@@ -241,9 +241,13 @@ err:
 void write_log_line(FILE *fp, commit_info *ci)
 {
   fputs("<tr><td>\n", fp);
+
+  /* Age */
   if (ci->author)
     format_git_time_short(fp, &(ci->author->when));
   fputs("</td><td>", fp);
+
+  /* Commit message */
   if (ci->summary)
   {
     fprintf(fp, "<a href=\"commit/%s.html\">", ci->hash);
@@ -251,9 +255,19 @@ void write_log_line(FILE *fp, commit_info *ci)
     fputs("</a>", fp);
   }
   fputs("</td><td>", fp);
+
+  /* Author Name */
   if (ci->author)
     xml_encode(fp, ci->author->name, strlen(ci->author->name));
-  fputs("</td><td>", fp);
+  fputs("</td>", fp);
+
+  /* Files changed */
+  fprintf(fp, "<td>%zu</td>", ci->file_count);
+
+  /* File delta */
+  fprintf(fp, "<td>"
+               "<span class=\"add\">+%zu</span>/<span class=\"del\">-%zu</span>"
+               "</td>", ci->add_count, ci->del_count);
 }
 
 void write_log_header(FILE *fp)

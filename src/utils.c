@@ -22,7 +22,7 @@ void format_git_time_short(FILE *fp, const git_time *gtime)
   t = (time_t) gtime->time;
   if (!(intm = gmtime(&t))) return;
 
-  strftime(out, sizeof(out), "%Y-%m-%d %H:%M", intm);
+  strftime(out, sizeof(out), "%Y-%m-%d", intm);
   fputs(out, fp);
 }
 
