@@ -1,11 +1,13 @@
 #include "repository.h"
 
 static void initialize(repository *repo);
-static commit_info *get_commit_info(repository *repo, const git_oid *id);
+static commit_info *init_commit_info(repository *repo, const git_oid *id);
+static int get_commit_info(commit_info *ci, repository *repo);
 static void free_commit_info(commit_info *ci);
+static void free_delta_info(delta_info *di);
 static void write_page_header(FILE *fp, repository *repo, const char *relpath);
 static void write_log(FILE *fp[], repository *repo);
-static void write_log_line(FILE *fp, repository *repo);
+static void write_log_line(FILE *fp, commit_info *ci);
 static void write_log_header(FILE *fp);
 
 static git_object *obj = NULL;
@@ -66,6 +68,11 @@ void free_commit_info(commit_info *ci)
 {
   if (!ci) return;
 
+  if (ci->deltas)
+    for (unsigned int i = 0; i < ci->ndeltas; i++)
+      free_delta_info(ci->deltas[i]);
+
+  free(ci->deltas);
   git_diff_free(ci->diff);
   git_tree_free(ci->commit_tree);
   git_tree_free(ci->parent_tree);
@@ -74,7 +81,15 @@ void free_commit_info(commit_info *ci)
   free(ci);
 }
 
-commit_info *get_commit_info(repository *repo, const git_oid *id)
+void free_delta_info(delta_info *di)
+{
+  if (!di) return;
+
+  git_patch_free(di->patch);
+  free(di);
+}
+
+commit_info *init_commit_info(repository *repo, const git_oid *id)
 {
   commit_info *ci = calloc(1, sizeof(commit_info));
 
@@ -93,6 +108,97 @@ commit_info *get_commit_info(repository *repo, const git_oid *id)
   return ci;
 err:
   return NULL;
+}
+
+int get_commit_info(commit_info *ci, repository *repo)
+{
+  delta_info *di;
+  git_diff_options opts;
+  git_diff_find_options fopts;
+  const git_diff_delta *delta;
+  const git_diff_hunk *hunk;
+  const git_diff_line *line;
+  git_patch *patch = NULL;
+  size_t ndeltas, nhunks, nhunklines;
+  unsigned int i;
+
+  /* Get the tree object for the current commit hash */
+  if (git_tree_lookup(&(ci->commit_tree),
+                        repo->repo, git_commit_tree_id(ci->commit))) goto err;
+
+  if (!git_commit_parent(&(ci->parent), ci->commit, 0))
+    if (git_tree_lookup(&(ci->parent_tree),
+                          repo->repo, git_commit_tree_id(ci->parent)))
+    {
+      ci->parent = NULL;
+      ci->parent_tree = NULL;
+    }
+
+  git_diff_init_options(&opts, GIT_DIFF_OPTIONS_VERSION);
+  opts.flags |= GIT_DIFF_DISABLE_PATHSPEC_MATCH |
+                GIT_DIFF_IGNORE_SUBMODULES      |
+                GIT_DIFF_INCLUDE_TYPECHANGE;
+
+  if (git_diff_tree_to_tree(&(ci->diff), repo->repo,
+                              ci->parent_tree, ci->commit_tree, &opts)) goto err;
+
+  if (git_diff_find_init_options(&fopts, GIT_DIFF_FIND_OPTIONS_VERSION))
+    goto err;
+
+  fopts.flags |= GIT_DIFF_FIND_RENAMES |
+                 GIT_DIFF_FIND_COPIES  |
+                 GIT_DIFF_FIND_EXACT_MATCH_ONLY;
+  if (git_diff_find_similar(ci->diff, &fopts)) goto err;
+
+  ndeltas = git_diff_num_deltas(ci->diff);
+  ci->deltas = calloc(ndeltas, sizeof(delta_info*));
+
+  for (i = 0; i < ndeltas; i++) {
+    if (git_patch_from_diff(&patch, ci->diff, i)) goto err;
+
+    di = calloc(1, sizeof(delta_info));
+    di->patch = patch;
+    ci->deltas[i] = di;
+
+    delta = git_patch_get_delta(patch);
+
+    /* skip stats for binary data */
+    if (delta->flags & GIT_DIFF_FLAG_BINARY) continue;
+
+    nhunks = git_patch_num_hunks(patch);
+    for (unsigned int j = 0; j < nhunks; j++)
+    {
+      if (git_patch_get_hunk(&hunk, &nhunklines, patch, j)) break;
+      for (unsigned int k = 0; ; k++) {
+        if (git_patch_get_line_in_hunk(&line, patch, j, k)) break;
+        if (line->old_lineno == -1)
+        {
+          di->add_count++;
+          ci->add_count++;
+        }
+        else if (line->new_lineno == -1)
+        {
+          di->del_count++;
+          ci->del_count++;
+        }
+      }
+    }
+  }
+  ci->ndeltas = i;
+  ci->file_count = i;
+
+  return 0;
+err:
+  git_diff_free(ci->diff);
+  git_tree_free(ci->commit_tree);
+  git_tree_free(ci->parent_tree);
+  git_commit_free(ci->parent);
+  if (ci->deltas)
+    for (unsigned int i = 0; i < ci->ndeltas; i++)
+      free_delta_info(ci->deltas[i]);
+  free(ci->deltas);
+
+  return -1;
 }
 
 void write_log(FILE *fp[], repository *repo)
@@ -118,16 +224,37 @@ void write_log(FILE *fp[], repository *repo)
     /* If the commit hash has already been created, skip to the next hash */
     if (!access(path, F_OK)) continue;
 
-    if (!(ci = get_commit_info(repo, &id))) break;
+    if (!(ci = init_commit_info(repo, &id))) break;
+    if (get_commit_info(ci, repo) == -1) goto err;
 
+    /* write_log_line(fp[0], ci); */
+    for (unsigned int i = 0; i < MAX_FOPEN; i++)
+      write_log_line(fp[i], ci);
+
+err:
     free_commit_info(ci);
   }
 
   git_revwalk_free(w);
 }
 
-static void write_log_line(FILE *fp, repository *repo)
-{}
+void write_log_line(FILE *fp, commit_info *ci)
+{
+  fputs("<tr><td>\n", fp);
+  if (ci->author)
+    format_git_time_short(fp, &(ci->author->when));
+  fputs("</td><td>", fp);
+  if (ci->summary)
+  {
+    fprintf(fp, "<a href=\"commit/%s.html\">", ci->hash);
+    xml_encode(fp, ci->summary, strlen(ci->summary));
+    fputs("</a>", fp);
+  }
+  fputs("</td><td>", fp);
+  if (ci->author)
+    xml_encode(fp, ci->author->name, strlen(ci->author->name));
+  fputs("</td><td>", fp);
+}
 
 void write_log_header(FILE *fp)
 {
