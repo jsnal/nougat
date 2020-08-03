@@ -216,7 +216,8 @@ void write_log(FILE *fp[], repository *repo)
   git_revwalk_push(w, head);
   git_revwalk_simplify_first_parent(w);
 
-  while (!git_revwalk_next(&id, w))
+  /* while (!git_revwalk_next(&id, w)) */
+  for (unsigned int i = 0; !git_revwalk_next(&id, w); i++)
   {
     git_oid_tostr(hash, sizeof(hash), &id);
     snprintf(path, sizeof(path), "commit/%s.html", hash);
@@ -227,9 +228,12 @@ void write_log(FILE *fp[], repository *repo)
     if (!(ci = init_commit_info(repo, &id))) break;
     if (get_commit_info(ci, repo) == -1) goto err;
 
-    /* write_log_line(fp[0], ci); */
-    for (unsigned int i = 0; i < MAX_FOPEN; i++)
-      write_log_line(fp[i], ci);
+    for (unsigned int j = 0; j < MAX_FOPEN; j++)
+    {
+      /* Print only the 10 most recent commits on the summary page */
+      if (j == 0 && i > 10) continue;
+      write_log_line(fp[j], ci);
+    }
 
 err:
     free_commit_info(ci);
@@ -267,7 +271,7 @@ void write_log_line(FILE *fp, commit_info *ci)
   /* File delta */
   fprintf(fp, "<td>"
                "<span class=\"add\">+%zu</span>/<span class=\"del\">-%zu</span>"
-               "</td>", ci->add_count, ci->del_count);
+               "</td>\n", ci->add_count, ci->del_count);
 }
 
 void write_log_header(FILE *fp)
@@ -319,6 +323,7 @@ int write_repo(repository *repo)
   fp[1] = fopen("log.html", "w");
   write_page_header(fp[1], repo, "../");
   write_log(fp, repo);
+  write_footer(fp[1]);
 
   fclose(fp[1]);
 
