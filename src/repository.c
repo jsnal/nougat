@@ -5,7 +5,10 @@ static commit_info *init_commit_info(repository *repo, const git_oid *id);
 static int get_commit_info(commit_info *ci, repository *repo);
 static void free_commit_info(commit_info *ci);
 static void free_delta_info(delta_info *di);
-static void write_page_header(FILE *fp, repository *repo, const char *relpath);
+static void write_page_header(FILE *fp, repository *repo, const char *root_path,
+                              const char *repo_path);
+static void write_commit_info(FILE *fp, commit_info *ci);
+static void write_commit_diff(FILE *fp, commit_info *ci);
 static void write_log(FILE *fp[], repository *repo);
 static void write_log_line(FILE *fp, commit_info *ci);
 static void write_log_header(FILE *fp);
@@ -201,16 +204,38 @@ err:
   return -1;
 }
 
+void write_commit_info(FILE *fp, commit_info *ci)
+{
+  fputs("<table id=\"commit-info\">\n<tbody>\n<tr>"
+        "<td>author</td><td>", fp);
+  if (ci->author)
+  {
+    xml_encode(fp, ci->author->name, strlen(ci->author->name));
+    fputs("&lt;", fp);
+    xml_encode(fp, ci->author->email, strlen(ci->author->email));
+    fputs("&gt;</td>", fp);
+    /* fprintf(fp, "<td>author</td><td>%s</td>") */
+  }
+}
+
+void write_commit_diff(FILE *fp, commit_info *ci)
+{
+
+}
+
 void write_log(FILE *fp[], repository *repo)
 {
   commit_info *ci;
   git_revwalk *w = NULL;
   git_oid id;
   char path[PATH_MAX], hash[GIT_OID_HEXSZ + 1];
-  FILE *cfp;
+  FILE *hash_fp;
 
   /* Write a log header on all the passed in files */
   for (unsigned int i = 0; i < MAX_FOPEN; i++) write_log_header(fp[i]);
+
+  /* Make the directory to store all of the commit files */
+  mkdir("commit", 0700);
 
   git_revwalk_new(&w, repo->repo);
   git_revwalk_push(w, head);
@@ -222,9 +247,6 @@ void write_log(FILE *fp[], repository *repo)
     git_oid_tostr(hash, sizeof(hash), &id);
     snprintf(path, sizeof(path), "commit/%s.html", hash);
 
-    /* If the commit hash has already been created, skip to the next hash */
-    if (!access(path, F_OK)) continue;
-
     if (!(ci = init_commit_info(repo, &id))) break;
     if (get_commit_info(ci, repo) == -1) goto err;
 
@@ -233,6 +255,17 @@ void write_log(FILE *fp[], repository *repo)
       /* Print only the 10 most recent commits on the summary page */
       if (j == 0 && i > 10) continue;
       write_log_line(fp[j], ci);
+    }
+
+    /* If the commit hash has already been created, skip to the next hash */
+    if (!access(path, F_OK)) continue;
+    else
+    {
+      printf("creating the %s\n", path);
+      hash_fp = fopen(path, "w");
+      write_page_header(hash_fp, repo, "../../", "../");
+      write_commit_info(hash_fp, ci);
+      fclose(hash_fp);
     }
 
 err:
@@ -281,24 +314,26 @@ void write_log_header(FILE *fp)
         fp);
 }
 
-void write_page_header(FILE *fp, repository *repo, const char *relpath)
+/* TODO: See if there is a better way of handling the relpaths */
+void write_page_header(FILE *fp, repository *repo, const char *root_path,
+                       const char *repo_path)
 {
-  write_header(fp, relpath);
+  write_header(fp, root_path);
 
   /* TODO: Put the logo to the left of this table-row */
-  fputs("<table id=\"header\">\n<tbody>\n<tr><td>"
-        "<a href=\"../index.html\">index</a> : ", fp);
+  fprintf(fp, "<table id=\"header\">\n<tbody>\n<tr><td>"
+              "<a href=\"%sindex.html\">index</a> : ", root_path);
   fprintf(fp, "%s<td></tr>\n<tr><td>%s</td></tr>\n", repo->name, repo->desc);
   /* TODO: Add the clone URL */
 
   fputs("</tbody>\n</table>\n<table id=\"nav\">\n<tbody>\n", fp);
   fprintf(fp, "<tr><td>"
-              "\n<a href=\"#\">about</a>"
-              "\n<a href=\"summary.html\">summary</a>"
-              "\n<a href=\"refs.html\">refs</a>"
-              "\n<a href=\"log.html\">log</a>"
-              "\n<a href=\"tree.html\">tree</a>"
-              "\n</td></tr>");
+              "\n<a href=\"%1$s#\">about</a>"
+              "\n<a href=\"%1$ssummary.html\">summary</a>"
+              "\n<a href=\"%1$srefs.html\">refs</a>"
+              "\n<a href=\"%1$slog.html\">log</a>"
+              "\n<a href=\"%1$stree.html\">tree</a>"
+              "\n</td></tr>", repo_path);
   fputs("\n</tbody>\n</table>\n", fp);
 }
 
@@ -317,17 +352,21 @@ int write_repo(repository *repo)
 
   /* Write the summary file */
   fp[0] = fopen("summary.html", "w");
-  write_page_header(fp[0], repo, "../");
+  write_page_header(fp[0], repo, "../", "");
 
   /* Write the log file */
   fp[1] = fopen("log.html", "w");
-  write_page_header(fp[1], repo, "../");
+  write_page_header(fp[1], repo, "../", "");
   write_log(fp, repo);
   write_footer(fp[1]);
-
   fclose(fp[1]);
 
   /* write refs */
+  fp[1] = fopen("refs.html", "w");
+  write_page_header(fp[1], repo, "../", "");
+  /* write_log(fp, repo); */
+  write_footer(fp[1]);
+  fclose(fp[1]);
 
   /* Close the summary file */
   write_footer(fp[0]);
