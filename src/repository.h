@@ -29,7 +29,7 @@ typedef struct commit_info {
   const git_signature *author;
   const git_signature *committer;
   const char          *summary;
-  const char          *message;
+  const char          *body;
 
   git_diff   *diff;
   git_commit *commit;

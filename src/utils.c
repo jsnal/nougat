@@ -26,6 +26,24 @@ void format_git_time_short(FILE *fp, const git_time *gtime)
   fputs(out, fp);
 }
 
+void format_git_time(FILE *fp, enum time_format tf, const git_time *gtime)
+{
+  struct tm *intm;
+  time_t t;
+  char out[32];
+
+  t = (time_t) gtime->time;
+  if (!(intm = gmtime(&t))) return;
+
+  switch(tf)
+  {
+    case SHORT: strftime(out, sizeof(out), "%Y-%m-%d", intm);          break;
+    case LONG:  strftime(out, sizeof(out), "%Y-%m-%d %H:%M", intm);    break;
+    case FULL:  strftime(out, sizeof(out), "%Y-%m-%d %H:%M:%S", intm); break;
+  }
+  fputs(out, fp);
+}
+
 void xml_encode(FILE *fp, const char *s, size_t len)
 {
   size_t i;
@@ -58,7 +76,7 @@ void write_header(FILE *fp, const char *relpath)
   fprintf(fp, "</title>\n");
   fprintf(fp, "<link rel=\"stylesheet\" type=\"text/css\" href=\"%s%s\" />\n", relpath, cfg->style_path);
   fprintf(fp, "<link href='http://fonts.googleapis.com/css?family=Lato&subset=latin,latin-ext' rel='stylesheet' type='text/css'>");
-  fputs("</head>\n<body>\n", fp);
+  fputs("</head>\n<body>\n<div id=\"content\">", fp);
 }
 
 void write_footer(FILE *fp)

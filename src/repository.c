@@ -106,7 +106,7 @@ commit_info *init_commit_info(repository *repo, const git_oid *id)
   ci->author = git_commit_author(ci->commit);
   ci->committer = git_commit_committer(ci->commit);
   ci->summary = git_commit_summary(ci->commit);
-  ci->message = git_commit_message(ci->commit);
+  ci->body = git_commit_body(ci->commit);
 
   return ci;
 err:
@@ -206,15 +206,58 @@ err:
 
 void write_commit_info(FILE *fp, commit_info *ci)
 {
-  fputs("<table id=\"commit-info\">\n<tbody>\n<tr>"
-        "<td>author</td><td>", fp);
+  fputs("<table id=\"commit-info\">\n<tbody>\n", fp);
+
+  /* Commit author and time authored */
   if (ci->author)
   {
+    fputs("<tr><td>author</td><td>", fp);
     xml_encode(fp, ci->author->name, strlen(ci->author->name));
-    fputs("&lt;", fp);
+    fputs("&lt;<a href=\"mailto:", fp);
     xml_encode(fp, ci->author->email, strlen(ci->author->email));
-    fputs("&gt;</td>", fp);
-    /* fprintf(fp, "<td>author</td><td>%s</td>") */
+    fputs("\">", fp);
+    xml_encode(fp, ci->author->email, strlen(ci->author->email));
+    fputs("</a>&gt;</td><td>", fp);
+    format_git_time(fp, FULL, &(ci->author->when));
+    fputs("</td></tr>\n", fp);
+  }
+
+  /* Committer and time committed */
+  if (ci->committer)
+  {
+    fputs("<tr><td>committer</td><td>", fp);
+    xml_encode(fp, ci->committer->name, strlen(ci->committer->name));
+    fputs("&lt;<a href=\"mailto:", fp);
+    xml_encode(fp, ci->committer->email, strlen(ci->committer->email));
+    fputs("\">", fp);
+    xml_encode(fp, ci->committer->email, strlen(ci->committer->email));
+    fputs("</a>&gt;</td><td>", fp);
+    format_git_time(fp, FULL, &(ci->committer->when));
+    fputs("</td></tr>\n", fp);
+  }
+
+  /* Current commit hash */
+  if (ci->hash)
+  {
+    fputs("<tr><td>commit</td><td>", fp);
+    fprintf(fp, "<a href=\"../commit/%1$s.html\">%1$s</a></td></tr>\n",
+            ci->hash);
+  }
+
+  /* Parent commit hash */
+  if (ci->parent_hash)
+  {
+    fputs("<tr><td>parent</td><td>", fp);
+    fprintf(fp, "<a href=\"../commit/%1$s.html\">%1$s</a></td></tr>\n",
+            ci->parent_hash);
+  }
+
+  fputs("</table></tbody>", fp);
+
+  if (ci->body)
+  {
+    fprintf(fp, "<div id=\"commit-summary\">%s</div>\n", ci->summary);
+    fprintf(fp, "<div id=\"commit-body\">%s</div>\n", ci->body);
   }
 }
 
@@ -258,15 +301,14 @@ void write_log(FILE *fp[], repository *repo)
     }
 
     /* If the commit hash has already been created, skip to the next hash */
-    if (!access(path, F_OK)) continue;
-    else
-    {
-      printf("creating the %s\n", path);
-      hash_fp = fopen(path, "w");
-      write_page_header(hash_fp, repo, "../../", "../");
-      write_commit_info(hash_fp, ci);
-      fclose(hash_fp);
-    }
+    if (!access(path, F_OK)) goto err;
+
+    printf("creating the %s\n", path);
+    hash_fp = fopen(path, "w");
+    write_page_header(hash_fp, repo, "../../", "../");
+    write_commit_info(hash_fp, ci);
+    write_footer(hash_fp);
+    fclose(hash_fp);
 
 err:
     free_commit_info(ci);
