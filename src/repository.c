@@ -323,7 +323,7 @@ void write_log_line(FILE *fp, commit_info *ci)
 
   /* Age */
   if (ci->author)
-    format_git_time_short(fp, &(ci->author->when));
+    format_git_time(fp, SHORT, &(ci->author->when));
   fputs("</td><td>", fp);
 
   /* Commit message */

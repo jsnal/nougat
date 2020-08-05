@@ -64,7 +64,7 @@ void write_table_row(FILE *fp, repository *repo)
   xml_encode(fp, repo->owner, strlen(repo->owner));
   fputs("</td><td>", fp);
 
-  if (author) format_git_time_short(fp, &(author->when));
+  if (author) format_git_time(fp, SHORT, &(author->when));
   fputs("</td></tr>", fp);
   git_commit_free(commit);
 
