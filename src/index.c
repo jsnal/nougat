@@ -24,7 +24,7 @@ void write_table_header(FILE *fp)
   fputs("<table id=\"index\"><thead>", fp);
 
   fputs("<tr><td><b>Name</b></td><td><b>Description</b></td><td><b>Owner</b></td>"
-      "<td><b>Last commit</b></td></tr>"
+      "<td><b>Age</b></td></tr>"
       "</thead><tbody>\n", fp);
 }
 

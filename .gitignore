@@ -5,6 +5,7 @@
 
 nougat
 test/
+.ccls-cache/
 
 # vim
 *~

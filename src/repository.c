@@ -259,11 +259,51 @@ void write_commit_info(FILE *fp, commit_info *ci)
     fprintf(fp, "<div id=\"commit-summary\">%s</div>\n", ci->summary);
     fprintf(fp, "<div id=\"commit-body\">%s</div>\n", ci->body);
   }
+
+  write_commit_diff(fp, ci);
 }
 
 void write_commit_diff(FILE *fp, commit_info *ci)
 {
+	const git_diff_delta *delta;
+	const git_diff_hunk *hunk;
+	const git_diff_line *line;
+	git_patch *patch;
+	size_t nhunks, nhunklines, changed, add, del, total, j, k;
+	char linestr[80];
+  const char *status;
+	int c;
 
+  if (!ci->deltas) return;
+
+	if (ci->file_count > 1000   ||
+	    ci->ndeltas   > 1000    ||
+	    ci->add_count  > 100000 ||
+	    ci->del_count  > 100000)
+  {
+		fputs("Diff is too large, output suppressed.\n", fp);
+		return;
+	}
+
+  fputs("<div id=\"diff-header\">Diffstat</div>\n<table id=\"diff-table\">\n",
+        fp);
+  for (unsigned int i = 0; i < ci->ndeltas; i++)
+  {
+    delta = git_patch_get_delta(ci->deltas[i]->patch);
+
+    switch (delta->status)
+    {
+      case GIT_DELTA_ADDED:      status = "Added";      break;
+      case GIT_DELTA_COPIED:     status = "Copied";     break;
+      case GIT_DELTA_DELETED:    status = "Deleted";    break;
+      case GIT_DELTA_MODIFIED:   status = "Modified";   break;
+      case GIT_DELTA_RENAMED:    status = "Renamed";    break;
+      case GIT_DELTA_TYPECHANGE: status = "Typechange"; break;
+      default:                   status = "Unknown";    break;
+    }
+
+    fprintf(fp, "<tr><td>%s</td>", status);
+  }
 }
 
 void write_log(FILE *fp[], repository *repo)
