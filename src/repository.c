@@ -303,6 +303,34 @@ void write_commit_diff(FILE *fp, commit_info *ci)
     }
 
     fprintf(fp, "<tr><td>%s</td>", status);
+
+    fprintf(fp, "<td><a href=\"#h%d\">", i);
+    xml_encode(fp, delta->old_file.path, strlen(delta->old_file.path));
+    if (strcmp(delta->old_file.path, delta->new_file.path)) {
+      fputs(" -&gt; ", fp);
+      xml_encode(fp, delta->new_file.path, strlen(delta->new_file.path));
+    }
+    fputs("</a></td></tr>\n", fp);
+
+    /* TODO: add diffstate graph here (table within a table) */
+  }
+
+  fprintf(fp, "</table>\n<div id=\"head\">%zu file%s changed, %zu insertion%s, "
+              "%zu deletion%s</div>\n",
+              ci->file_count, ci->file_count == 1 ? "" : "s",
+              ci->add_count,  ci->add_count  == 1 ? "" : "s",
+              ci->del_count,  ci->del_count  == 1 ? "" : "s");
+
+  /* TODO: Optimize this so there aren't two of the same exact loops */
+  char new_hash[PATH_MAX], old_hash[GIT_OID_HEXSZ + 1];
+  for (unsigned int i = 0; i < ci->ndeltas; i++)
+  {
+    delta = git_patch_get_delta(ci->deltas[i]->patch);
+
+    git_oid_tostr(new_hash, sizeof(new_hash), &delta->new_file.id);
+    git_oid_tostr(old_hash, sizeof(old_hash), &delta->new_file.id);
+
+    printf("%s: %s -> %s: %s\n", delta->new_file.path, new_hash, delta->old_file.path, old_hash);
   }
 }
 
