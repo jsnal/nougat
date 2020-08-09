@@ -270,7 +270,7 @@ void write_commit_diff(FILE *fp, commit_info *ci)
 	const git_diff_line *line;
 	git_patch *patch;
 	size_t nhunks, nhunklines, changed, add, del, total, j, k;
-	char linestr[80];
+	char linestr[80], new_hash[8], old_hash[8];
   const char *status;
 	int c;
 
@@ -315,22 +315,48 @@ void write_commit_diff(FILE *fp, commit_info *ci)
     /* TODO: add diffstate graph here (table within a table) */
   }
 
-  fprintf(fp, "</table>\n<div id=\"head\">%zu file%s changed, %zu insertion%s, "
+  fprintf(fp, "</table>\n<div id=\"summary\">%zu file%s changed, %zu insertion%s, "
               "%zu deletion%s</div>\n",
               ci->file_count, ci->file_count == 1 ? "" : "s",
               ci->add_count,  ci->add_count  == 1 ? "" : "s",
               ci->del_count,  ci->del_count  == 1 ? "" : "s");
 
   /* TODO: Optimize this so there aren't two of the same exact loops */
-  char new_hash[PATH_MAX], old_hash[GIT_OID_HEXSZ + 1];
   for (unsigned int i = 0; i < ci->ndeltas; i++)
   {
-    delta = git_patch_get_delta(ci->deltas[i]->patch);
-
+    /* Need to delcare this verbosely so git_patch_num_hunks works later */
+    patch = ci->deltas[i]->patch;
+    delta = git_patch_get_delta(patch);
     git_oid_tostr(new_hash, sizeof(new_hash), &delta->new_file.id);
-    git_oid_tostr(old_hash, sizeof(old_hash), &delta->new_file.id);
+    git_oid_tostr(old_hash, sizeof(old_hash), &delta->old_file.id);
 
-    printf("%s: %s -> %s: %s\n", delta->new_file.path, new_hash, delta->old_file.path, old_hash);
+    fputs("<table class=\"head\">\n<tr><td>diff --git a/", fp);
+    xml_encode(fp, delta->old_file.path, strlen(delta->old_file.path));
+    fputs(" b/", fp);
+    xml_encode(fp, delta->old_file.path, strlen(delta->new_file.path));
+    fprintf(fp, "</td></tr>\n");
+    fprintf(fp, "<tr><td>index %s..%s</td></tr>\n</table>\n", old_hash, new_hash);
+
+    /* Check binary data */
+    if (delta->flags & GIT_DIFF_FLAG_BINARY) {
+      fputs("Binary files differ.\n", fp);
+      continue;
+    }
+
+    nhunks = git_patch_num_hunks(patch);
+    for (unsigned int j = 0; j < nhunks; j++)
+    {
+      if (git_patch_get_hunk(&hunk, &nhunklines, patch, j))
+        break;
+
+      for (unsigned int k = 0; ; k++)
+      {
+        if (git_patch_get_line_in_hunk(&line, patch, j, k))
+          break;
+
+        xml_encode(fp, line->content, line->content_len);
+      }
+    }
   }
 }
 
@@ -341,6 +367,7 @@ void write_log(FILE *fp[], repository *repo)
   git_oid id;
   char path[PATH_MAX], hash[GIT_OID_HEXSZ + 1];
   FILE *hash_fp;
+
 
   /* Write a log header on all the passed in files */
   for (unsigned int i = 0; i < MAX_FOPEN; i++) write_log_header(fp[i]);
